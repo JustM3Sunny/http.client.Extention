@@ -8,6 +8,11 @@ A modern, powerful HTTP client extension for Visual Studio Code, inspired by Pos
 [Get the extension from the VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=shannii.http-client-pro-extension)
 
 
+
+## 📦 Available on the VS Code Marketplace
+
+
+
 ![screenshot of HTTP Client extension](src/assets/image.png)
 
 
