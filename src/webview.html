@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP Client</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles to complement Tailwind */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+            color: #d1d5db; /* text-gray-300 */
+        }
+
+        /* Custom focus rings for better accessibility */
+        select:focus, input:focus, textarea:focus {
+            outline: 2px solid transparent;
+            outline-offset: 2px;
+            --tw-ring-color: #4f46e5; /* ring-indigo-500 */
+            box-shadow: 0 0 0 2px var(--tw-ring-color);
+        }
+
+        /* Custom scrollbar for a more integrated look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937; /* bg-gray-800 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563; /* bg-gray-600 */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* bg-gray-500 */
+        }
+
+        /* Style for the active request tab */
+        .request-tab.active {
+            color: #4f46e5; /* text-indigo-500 */
+            border-color: #4f46e5; /* border-indigo-500 */
+        }
+
+        /* Style for the active response tab */
+        .response-tab.active {
+            color: #4f46e5; /* text-indigo-500 */
+            border-color: #4f46e5; /* border-indigo-500 */
+        }
+
+        /* Hide content that is not active */
+        .tab-content:not(.active), .response-tab-content:not(.active) {
+            display: none;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+        <!-- Main Title -->
+        <h1 class="text-2xl font-bold text-white mb-6">HTTP Client</h1>
+
+        <!-- Request Container -->
+        <div class="bg-gray-800/50 backdrop-blur-sm ring-1 ring-white/10 rounded-xl p-6 mb-8">
+            <!-- URL and Send Button Container -->
+            <div class="flex flex-col sm:flex-row gap-2 mb-6">
+                <select id="method" class="bg-gray-900 border border-gray-700 rounded-md px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 sm:w-32">
+                    <option>GET</option>
+                    <option>POST</option>
+                    <option>PUT</option>
+                    <option>DELETE</option>
+                    <option>PATCH</option>
+                    <option>HEAD</option>
+                    <option>OPTIONS</option>
+                </select>
+                <input type="text" id="url" placeholder="https://api.example.com/data" class="flex-grow bg-gray-900 border border-gray-700 rounded-md px-4 py-2 text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                <button id="sendRequest" class="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-md transition duration-150 disabled:opacity-50 disabled:cursor-wait">
+                    <svg id="send-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-send" viewBox="0 0 16 16">
+                      <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
+                    </svg>
+                    <svg id="loading-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span id="send-text">Send</span>
+                </button>
+            </div>
+
+            <!-- Request Tabs -->
+            <div class="border-b border-gray-700">
+                <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                    <a href="#" class="request-tab active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-indigo-400 hover:border-indigo-400" data-tab="params">Params</a>
+                    <a href="#" class="request-tab whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-indigo-400 hover:border-indigo-400" data-tab="headers">Headers</a>
+                    <a href="#" class="request-tab whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-indigo-400 hover:border-indigo-400" data-tab="body">Body</a>
+                </nav>
+            </div>
+
+            <!-- Request Tab Content -->
+            <div class="mt-6">
+                <div id="params-tab" class="tab-content active">
+                    <p class="text-sm text-gray-400">Query parameters can be added directly to the URL, for example: <code class="bg-gray-900 px-1 py-0.5 rounded">?id=123</code></p>
+                </div>
+                <div id="headers-tab" class="tab-content">
+                    <div id="headers-container" class="space-y-3">
+                        <!-- Header rows will be dynamically added here -->
+                    </div>
+                    <button id="add-header" class="mt-4 flex items-center gap-2 text-sm font-medium text-indigo-400 hover:text-indigo-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16">
+                          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                          <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                        </svg>
+                        Add Header
+                    </button>
+                </div>
+                <div id="body-tab" class="tab-content">
+                    <textarea id="requestBody" placeholder='Request body for POST, PUT, PATCH. Example: {"key": "value"}' class="w-full h-40 bg-gray-900 border border-gray-700 rounded-md p-3 text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 font-mono text-sm"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Response Container -->
+        <div class="response-container">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-white">Response</h2>
+                <div id="status" class="text-sm font-medium px-3 py-1 rounded-full"></div>
+            </div>
+            
+            <!-- Response Tabs -->
+            <div class="border-b border-gray-700">
+                <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                    <a href="#" class="response-tab active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-indigo-400 hover:border-indigo-400" data-tab="response-body">Body</a>
+                    <a href="#" class="response-tab whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-indigo-400 hover:border-indigo-400" data-tab="response-headers">Headers</a>
+                </nav>
+            </div>
+
+            <!-- Response Content -->
+            <div class="mt-6">
+                <div id="response-body-tab" class="response-tab-content active relative">
+                     <button id="copy-response-btn" class="absolute top-3 right-3 p-1.5 text-gray-400 bg-gray-700 hover:bg-gray-600 rounded-md transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zM-1 8a.5.5 0 0 1 .5-.5h15a.5.5 0 0 1 0 1h-15A.5.5 0 0 1-1 8z"/>
+                        </svg>
+                     </button>
+                    <pre id="responseBody" class="w-full max-h-[400px] overflow-auto bg-gray-900 rounded-md p-4 text-sm text-gray-300 font-mono ring-1 ring-gray-700">Send a request to see the response here</pre>
+                </div>
+                <div id="response-headers-tab" class="response-tab-content">
+                    <pre id="responseHeaders" class="w-full max-h-[400px] overflow-auto bg-gray-900 rounded-md p-4 text-sm text-gray-300 font-mono ring-1 ring-gray-700"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock vscode api for browser testing if not in a webview
+        const vscode = typeof acquireVsCodeApi === 'function' 
+            ? acquireVsCodeApi() 
+            : { postMessage: (msg) => console.log('VSCode Message:', msg) };
+
+        // --- DOM Element References ---
+        const sendRequestBtn = document.getElementById('sendRequest');
+        const sendText = document.getElementById('send-text');
+        const sendIcon = document.getElementById('send-icon');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const statusElement = document.getElementById('status');
+        const responseBodyElement = document.getElementById('responseBody');
+        const responseHeadersElement = document.getElementById('responseHeaders');
+        const addHeaderBtn = document.getElementById('add-header');
+        const headersContainer = document.getElementById('headers-container');
+
+        // --- Helper Functions ---
+        const createHeaderRow = () => {
+            const row = document.createElement('div');
+            row.className = 'header-row flex items-center gap-2';
+            row.innerHTML = `
+                <input type="text" placeholder="Header" class="header-name flex-grow bg-gray-900 border border-gray-700 rounded-md px-3 py-1.5 text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 text-sm">
+                <input type="text" placeholder="Value" class="header-value flex-grow bg-gray-900 border border-gray-700 rounded-md px-3 py-1.5 text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 text-sm">
+                <button class="remove-header p-1.5 text-gray-500 hover:text-red-400 hover:bg-gray-700 rounded-md transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                    </svg>
+                </button>
+            `;
+            row.querySelector('.remove-header').addEventListener('click', () => row.remove());
+            headersContainer.appendChild(row);
+        };
+
+        const setupTabSystem = (tabSelector, contentSelector, activeClass) => {
+            document.querySelectorAll(tabSelector).forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    document.querySelectorAll(tabSelector).forEach(t => t.classList.remove(activeClass));
+                    document.querySelectorAll(contentSelector).forEach(c => c.classList.remove('active'));
+
+                    tab.classList.add(activeClass);
+                    const tabId = tab.getAttribute('data-tab');
+                    const content = document.getElementById(tabId + '-tab');
+                    if (content) content.classList.add('active');
+                });
+            });
+        };
+
+        // --- Event Listeners ---
+        
+        // Setup tab systems
+        setupTabSystem('.request-tab', '.tab-content', 'active');
+        setupTabSystem('.response-tab', '.response-tab-content', 'active');
+
+        // Add header button
+        addHeaderBtn.addEventListener('click', createHeaderRow);
+        
+        // Initialize with one header row
+        createHeaderRow();
+
+        // Send request button
+        sendRequestBtn.addEventListener('click', () => {
+            const method = document.getElementById('method').value;
+            const urlInput = document.getElementById('url');
+            let url = urlInput.value.trim();
+
+            if (!url) {
+                vscode.postMessage({ command: 'error', message: 'URL is required' });
+                urlInput.focus();
+                urlInput.classList.add('ring-2', 'ring-red-500');
+                setTimeout(() => urlInput.classList.remove('ring-2', 'ring-red-500'), 2000);
+                return;
+            }
+
+            if (!/^https?:\/\//.test(url)) {
+                url = 'http://' + url;
+                urlInput.value = url;
+            }
+
+            const headers = {};
+            document.querySelectorAll('.header-row').forEach(row => {
+                const nameInput = row.querySelector('.header-name');
+                const valueInput = row.querySelector('.header-value');
+                if (nameInput.value && valueInput.value) {
+                    headers[nameInput.value.trim()] = valueInput.value.trim();
+                }
+            });
+
+            let body = document.getElementById('requestBody').value.trim();
+
+            // Toggle loading state
+            sendRequestBtn.disabled = true;
+            sendText.classList.add('hidden');
+            sendIcon.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+            responseBodyElement.textContent = 'Sending request...';
+            responseHeadersElement.textContent = '';
+            statusElement.textContent = '';
+            statusElement.className = 'text-sm font-medium px-3 py-1 rounded-full';
+
+            vscode.postMessage({ command: 'sendRequest', method, url, headers, body });
+        });
+
+        // Copy response body
+        document.getElementById('copy-response-btn').addEventListener('click', (e) => {
+            const textToCopy = responseBodyElement.textContent;
+            // Using the clipboard API can be tricky in iFrames, but this is the modern way.
+            // A fallback to execCommand might be needed in some environments.
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const btn = e.currentTarget;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="text-green-400" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/></svg>`;
+                setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        });
+
+        // Handle messages from the extension
+        window.addEventListener('message', event => {
+            const message = event.data;
+
+            // Restore button state
+            sendRequestBtn.disabled = false;
+            sendText.classList.remove('hidden');
+            sendIcon.classList.remove('hidden');
+            loadingSpinner.classList.add('hidden');
+
+            switch (message.command) {
+                case 'response':
+                    // Status
+                    statusElement.textContent = `Status: ${message.status} ${message.statusText || ''}`;
+                    if (message.status >= 200 && message.status < 300) {
+                        statusElement.classList.add('bg-green-500/20', 'text-green-400');
+                    } else if (message.status >= 400) {
+                        statusElement.classList.add('bg-red-500/20', 'text-red-400');
+                    } else {
+                        statusElement.classList.add('bg-yellow-500/20', 'text-yellow-400');
+                    }
+
+                    // Headers
+                    const headersText = Object.entries(message.headers || {})
+                        .map(([key, value]) => `${key}: ${value}`)
+                        .join('\n');
+                    responseHeadersElement.textContent = headersText || 'No headers received.';
+
+                    // Body
+                    let responseBody = message.data;
+                    if (typeof responseBody === 'object') {
+                        try {
+                            responseBody = JSON.stringify(responseBody, null, 2);
+                        } catch (e) {
+                            responseBody = String(responseBody);
+                        }
+                    }
+                    responseBodyElement.textContent = responseBody || 'No response body.';
+                    break;
+
+                case 'error':
+                    statusElement.textContent = `Error`;
+                    statusElement.classList.add('bg-red-500/20', 'text-red-400');
+                    responseBodyElement.textContent = `Error: ${message.message || 'Unknown error'}`;
+                    responseHeadersElement.textContent = 'N/A';
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
