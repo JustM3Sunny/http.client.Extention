@@ -121,13 +121,20 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Register the webview view provider
     const provider = new HttpViewProvider(context.extensionUri);
+    
+    // Register the view provider
     context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider(HttpViewProvider.viewType, provider)
+        vscode.window.registerWebviewViewProvider(HttpViewProvider.viewType, provider, {
+            webviewOptions: { retainContextWhenHidden: true }
+        })
     );
 
     // Register the command to open the HTTP Client view
     const disposable = vscode.commands.registerCommand('http-client.openView', () => {
+        // Show the view in the sidebar
         vscode.commands.executeCommand('workbench.view.extension.http-client');
+        // Focus the view
+        vscode.commands.executeCommand('http-client.view.focus');
     });
 
     context.subscriptions.push(disposable);

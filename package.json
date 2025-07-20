@@ -8,7 +8,6 @@
     "type": "git",
     "url": "https://github.com/JustM3Sunny/http.client.Extention.git"
   },
-  "icon": "resources/icon.png",
   "engines": {
     "vscode": "^1.60.0"
   },
@@ -16,9 +15,11 @@
     "Other"
   ],
   "activationEvents": [
+    "onView:http-client.view",
     "onCommand:http-client.openView"
   ],
   "main": "./dist/extension.js",
+  "icon": "resources/icon.png",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -29,6 +30,12 @@
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "http-client.view",
+        "contents": "Welcome to HTTP Client!\n[Send HTTP Requests](command:http-client.openView)"
+      }
+    ],
     "views": {
       "http-client": [
         {
