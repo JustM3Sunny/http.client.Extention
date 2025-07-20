@@ -2,3 +2,4 @@ node_modules
 dist
 .vscode-test
 http-client-extension-0.0.1.vsix
+http-client-pro-extension-0.0.1.vsix
