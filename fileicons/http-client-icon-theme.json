@@ -1,0 +1,14 @@
+{
+    "iconDefinitions": {
+        "_file_http": {
+            "iconPath": "./resources/icon.svg"
+        }
+    },
+    "fileExtensions": {
+        "http": "_file_http"
+    },
+    "fileNames": {
+        ".http": "_file_http",
+        "http-client": "_file_http"
+    }
+}

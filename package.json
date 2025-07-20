@@ -1,9 +1,14 @@
 {
-  "name": "http-client",
+  "name": "http-client-extension",
   "displayName": "HTTP Client",
   "description": "A powerful HTTP client for VS Code, similar to Postman",
   "version": "0.0.1",
-  "publisher": "your-name",
+  "publisher": "shannii",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JustM3Sunny/http.client.Extention.git"
+  },
+  "icon": "resources/icon.png",
   "engines": {
     "vscode": "^1.60.0"
   },
@@ -15,31 +20,32 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "http-client.openView",
-        "title": "Open HTTP Client"
-      }
-    ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "http-client",
           "title": "HTTP Client",
-          "icon": "resources/icon.svg"
+          "icon": "resources/icon.png"
         }
       ]
     },
     "views": {
       "http-client": [
         {
-          "type": "webview",
-          "id": "http-client.mainView",
+          "id": "http-client.view",
           "name": "HTTP Client",
+          "type": "webview",
           "contextualTitle": "HTTP Client"
         }
       ]
-    }
+    },
+    "commands": [
+      {
+        "command": "http-client.openView",
+        "title": "Open HTTP Client",
+        "category": "HTTP Client"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

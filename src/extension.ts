@@ -27,30 +27,25 @@ interface AxiosError extends Error {
     toJSON: () => object;
 }
 
-export function activate(context: vscode.ExtensionContext) {
-    console.log('HTTP Client extension is now active!');
+class HttpViewProvider implements vscode.WebviewViewProvider {
+    public static readonly viewType = 'http-client.view';
+    private _view?: vscode.WebviewView;
+    private _disposables: vscode.Disposable[] = [];
 
-    // Register the command to open the HTTP Client view
-    const disposable = vscode.commands.registerCommand('http-client.openView', () => {
-        // Create and show a new webview
-        const panel = vscode.window.createWebviewPanel(
-            'httpClient',
-            'HTTP Client',
-            vscode.ViewColumn.One,
-            {
-                enableScripts: true,
-                retainContextWhenHidden: true,
-                localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'media'))]
-            }
-        );
+    constructor(private readonly _extensionUri: vscode.Uri) {}
 
-        // Set the HTML content for the webview
-        getWebviewContent(context).then(html => {
-            panel.webview.html = html;
-        });
+    public resolveWebviewView(webviewView: vscode.WebviewView) {
+        this._view = webviewView;
+        
+        webviewView.webview.options = {
+            enableScripts: true,
+            localResourceRoots: [this._extensionUri]
+        };
+
+        this._updateWebview(webviewView);
 
         // Handle messages from the webview
-        panel.webview.onDidReceiveMessage(
+        const messageDisposable = webviewView.webview.onDidReceiveMessage(
             async (message: { command: string; url?: string; method?: string; headers?: Record<string, string>; body?: any }) => {
                 try {
                     if (message.command === 'sendRequest' && message.url && message.method) {
@@ -61,7 +56,7 @@ export function activate(context: vscode.ExtensionContext) {
                             message.body
                         );
                         
-                        panel.webview.postMessage({
+                        webviewView.webview.postMessage({
                             command: 'response',
                             data: response.data,
                             status: response.status,
@@ -72,7 +67,7 @@ export function activate(context: vscode.ExtensionContext) {
                 } catch (error) {
                     console.error('Request failed:', error);
                     const axiosError = error as AxiosError;
-                    panel.webview.postMessage({
+                    webviewView.webview.postMessage({
                         command: 'error',
                         message: axiosError.message,
                         response: axiosError.response ? {
@@ -81,11 +76,58 @@ export function activate(context: vscode.ExtensionContext) {
                             headers: axiosError.response.headers
                         } : undefined
                     });
-                }                      return;
-            },
-            undefined,
-            context.subscriptions
+                }
+            }
         );
+
+        // Store the disposable
+        this._disposables.push(messageDisposable);
+        
+        // Clean up on dispose
+        webviewView.onDidDispose(() => {
+            this._disposables.forEach(d => d.dispose());
+            this._disposables = [];
+        });
+    }
+    
+    private async _updateWebview(webviewView: vscode.WebviewView) {
+        if (!this._view) {
+            return;
+        }
+
+        const webview = webviewView.webview;
+        const stylesUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, 'media', 'styles.css')
+        );
+        const scriptUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js')
+        );
+
+        // Get the HTML content
+        const htmlPath = vscode.Uri.joinPath(this._extensionUri, 'src', 'webview.html');
+        let html = await vscode.workspace.fs.readFile(htmlPath);
+        
+        // Replace placeholders with actual URIs
+        let htmlContent = html.toString()
+            .replace(/\${stylesUri}/g, stylesUri.toString())
+            .replace(/\${scriptUri}/g, scriptUri.toString());
+
+        this._view.webview.html = htmlContent;
+    }
+}
+
+export function activate(context: vscode.ExtensionContext) {
+    console.log('HTTP Client extension is now active!');
+
+    // Register the webview view provider
+    const provider = new HttpViewProvider(context.extensionUri);
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(HttpViewProvider.viewType, provider)
+    );
+
+    // Register the command to open the HTTP Client view
+    const disposable = vscode.commands.registerCommand('http-client.openView', () => {
+        vscode.commands.executeCommand('workbench.view.extension.http-client');
     });
 
     context.subscriptions.push(disposable);
@@ -125,26 +167,36 @@ async function sendHttpRequest(
     return await axios.request(config);
 }
 
-async function getWebviewContent(context: vscode.ExtensionContext): Promise<string> {
-    // Get the path to the webview HTML file
-    const webviewPath = vscode.Uri.file(
-        path.join(context.extensionPath, 'src', 'webview.html')
-    );
-    
-    // Read the HTML file content
+async function getWebviewContent(extensionUri: vscode.Uri): Promise<string> {
     try {
-        const bytes = await vscode.workspace.fs.readFile(webviewPath);
-        const decoder = new (require('util').TextDecoder)('utf-8');
-        return decoder.decode(bytes);
+        // Get the path to the webview HTML file
+        const webviewPath = vscode.Uri.joinPath(extensionUri, 'src', 'webview.html');
+        const fileContent = await vscode.workspace.fs.readFile(webviewPath);
+        return fileContent.toString();
     } catch (error) {
-        console.error('Failed to load webview content:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         return `
             <!DOCTYPE html>
             <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>HTTP Client Error</title>
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        padding: 20px; 
+                        color: var(--vscode-foreground);
+                        background-color: var(--vscode-editor-background);
+                    }
+                    h2 { color: #e06c75; }
+                    .error { color: #e06c75; font-family: monospace; }
+                </style>
+            </head>
             <body>
                 <h2>Error loading HTTP Client</h2>
                 <p>Failed to load the HTTP Client interface. Please check the extension logs for details.</p>
-                <p>Error: ${error instanceof Error ? error.message : String(error)}</p>
+                <p class="error">${errorMessage}</p>
             </body>
             </html>
         `;
