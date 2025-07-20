@@ -1,6 +1,6 @@
 {
-  "name": "http-client-extension",
-  "displayName": "HTTP Client",
+  "name": "http.client.pro.extension",
+  "displayName": "HTTP Client Pro Extension",
   "description": "A powerful HTTP client for VS Code, similar to Postman",
   "version": "0.0.1",
   "publisher": "shannii",
