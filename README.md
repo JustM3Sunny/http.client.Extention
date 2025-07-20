@@ -3,6 +3,11 @@
 A modern, powerful HTTP client extension for Visual Studio Code, inspired by Postman—right inside your editor. Effortlessly send HTTP requests, inspect responses, and supercharge your API development workflow without ever leaving VS Code.
 
 ---
+
+
+[Get the extension from the VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=shannii.http-client-pro-extension)
+
+
 ![screenshot of HTTP Client extension](src/assets/image.png)
 
 
