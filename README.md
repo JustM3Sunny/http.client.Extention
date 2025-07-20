@@ -3,7 +3,7 @@
 A modern, powerful HTTP client extension for Visual Studio Code, inspired by Postman—right inside your editor. Effortlessly send HTTP requests, inspect responses, and supercharge your API development workflow without ever leaving VS Code.
 
 ---
-![screenshot of HTTP Client extension](https://i.ibb.co/7dJRVt2w/http-client-screenshot.png)
+![screenshot of HTTP Client extension](src/assets/image.png)
 
 
 ## 🚀 Features
